@@ -3,7 +3,9 @@
 ## 1. Introduction
 
 This repository contains the solution for an OMS (Open Metering System) assignment.
-The objective of this task is to decrypt an encrypted OMS Wireless M-Bus telegram using a provided key, analyze the telegram structure, and present the results in a reproducible manner.
+The objective of this task is to decrypt an encrypted OMS Wireless M-Bus telegram
+using a provided key, analyze the telegram structure, and present the results in
+a reproducible and standards-aware manner.
 
 ---
 
@@ -17,6 +19,8 @@ The objective of this task is to decrypt an encrypted OMS Wireless M-Bus telegra
 - Payload Type: Encrypted OMS application data
 
 The decrypted payload is binary data and therefore not human-readable ASCII text.
+OMS application data must be interpreted using DIF/VIF records rather than text
+parsing.
 
 ---
 
@@ -26,7 +30,8 @@ The decrypted payload is binary data and therefore not human-readable ASCII text
 
 4255794d3dccfd46953146e701b7db68
 
-- Hexadecimal encoded
+
+- Encoding: Hexadecimal
 - Length: 16 bytes (128 bits)
 
 ---
@@ -38,6 +43,9 @@ a144c5142785895070078c20607a9d00902537ca231fa2da5889be8df367
 82c929310e9e5c4c0922a784df89cf0ded833be8da996eb5885409b6c9867978dea
 24001d68c603408d758a1e2b91c42ebad86a9b9d287880083bb0702850574d7b51
 e9c209ed68e0374e9b01febfd92b4cb9410fdeaf7fb526b742dc9a8d0682653
+
+---
+
 
 ---
 
@@ -53,23 +61,28 @@ e9c209ed68e0374e9b01febfd92b4cb9410fdeaf7fb526b742dc9a8d0682653
 ### 4.2 Decryption Steps
 
 1. The encryption key and payload were provided as hexadecimal strings.
-2. Both values were converted from hexadecimal to raw bytes.
-3. AES-128 in CBC mode was used for decryption.
-4. The Initialization Vector (IV) was handled according to OMS AES-CBC rules.
-For reproducibility, a zero-initialized IV (0x00…00) was used, which is a common
-assumption when the IV is not explicitly provided in OMS assignment scenarios.
+2. Both values were converted from hexadecimal to raw byte arrays.
+3. AES-128 in CBC mode was selected according to the OMS specification.
+4. The Initialization Vector (IV) was set to all zeros (0x00…00).  
+   This is a common and accepted assumption in OMS assignment scenarios when
+   the IV is not explicitly provided.
 5. The encrypted payload length was aligned to the AES block size (16 bytes).
-6. The decrypted output was obtained as binary OMS application data.
+6. The decrypted result was obtained as binary OMS application data.
 
 ---
 
 ## 5. Telegram Structure
 
-OMS application data consists of a sequence of records:
+OMS application data consists of a sequence of data records:
 
-- DIF (Data Information Field): Defines data length and data type.
-- VIF (Value Information Field): Defines the physical unit and meaning.
-- Value Field: Contains the actual measurement value.
+- **DIF (Data Information Field)**  
+  Defines the data length and data type.
+
+- **VIF (Value Information Field)**  
+  Defines the physical unit and semantic meaning of the value.
+
+- **Value Field**  
+  Contains the actual measurement data.
 
 The decrypted payload contains multiple OMS records following this structure.
 
@@ -82,18 +95,21 @@ The decrypted payload contains multiple OMS records following this structure.
 | Field | Value |
 |------|------|
 | Standard | OMS Wireless M-Bus |
-| Encryption | AES-128 CBC |
+| Encryption | AES-128-CBC |
 | Decryption Status | Successful |
 | Payload Format | Binary OMS application data |
 
 ---
 
-### 6.2 Measurement Data
+### 6.2 Measurement Data (High-Level)
 
 | Parameter | Description |
 |----------|-------------|
 | Volume | Volume measurement record present (m³) |
 | Status | Meter status information present |
+
+A full semantic decoding would require detailed DIF/VIF interpretation
+according to the OMS specification.
 
 ---
 
@@ -127,9 +143,11 @@ payload_hex = (
 
 key = unhexlify(key_hex)
 data = unhexlify(payload_hex)
+
+# Align payload length to AES block size
 data = data[:len(data) - (len(data) % 16)]
 
-iv = bytes(16)
+iv = bytes(16)  # 0x00...00
 cipher = AES.new(key, AES.MODE_CBC, iv)
 plaintext = cipher.decrypt(data)
 
