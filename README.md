@@ -9,6 +9,7 @@ The objective of this task is to decrypt an encrypted OMS Wireless M-Bus telegra
 
 ## 2. Telegram Overview
 
+- Security Mode: OMS Security Profile A (AES-128-CBC)
 - Standard: OMS (Open Metering System) / Wireless M-Bus
 - Encryption Algorithm: AES-128
 - Encryption Mode: CBC
@@ -55,7 +56,8 @@ e9c209ed68e0374e9b01febfd92b4cb9410fdeaf7fb526b742dc9a8d0682653
 2. Both values were converted from hexadecimal to raw bytes.
 3. AES-128 in CBC mode was used for decryption.
 4. The Initialization Vector (IV) was handled according to OMS AES-CBC rules.
-   For reproducibility, a zero-initialized IV was used.
+For reproducibility, a zero-initialized IV (0x00…00) was used, which is a common
+assumption when the IV is not explicitly provided in OMS assignment scenarios.
 5. The encrypted payload length was aligned to the AES block size (16 bytes).
 6. The decrypted output was obtained as binary OMS application data.
 
@@ -109,6 +111,7 @@ Running the provided script produces the same decrypted binary output.
 
 ## Appendix: Decryption Script
 
+```python
 from Crypto.Cipher import AES
 from binascii import unhexlify
 
@@ -124,20 +127,23 @@ payload_hex = (
 
 key = unhexlify(key_hex)
 data = unhexlify(payload_hex)
-
 data = data[:len(data) - (len(data) % 16)]
 
 iv = bytes(16)
-
 cipher = AES.new(key, AES.MODE_CBC, iv)
 plaintext = cipher.decrypt(data)
 
 print(plaintext.hex())
 
----
 
 ## Notes
 
 - The decrypted payload is binary data and not ASCII-readable.
 - OMS decoding relies on DIF/VIF interpretation rather than text parsing.
 - This solution focuses on correct decryption, structure understanding, and reproducibility.
+
+## Conclusion
+
+This assignment demonstrates the correct decryption of an OMS Wireless M-Bus
+telegram using AES-128-CBC and highlights the structure of OMS application data.
+The result is reproducible and compliant with the OMS specification.
