@@ -149,10 +149,11 @@ data = data[:len(data) - (len(data) % 16)]
 
 iv = bytes(16)  # 0x00...00
 cipher = AES.new(key, AES.MODE_CBC, iv)
-plaintext = cipher.decrypt(data)
 
+plaintext = cipher.decrypt(data)
 print(plaintext.hex())
 
+```
 
 ## Notes
 
