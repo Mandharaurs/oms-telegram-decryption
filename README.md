@@ -5,7 +5,11 @@
 This repository contains the solution for an OMS (Open Metering System) assignment.
 The objective of this task is to decrypt an encrypted OMS Wireless M-Bus telegram
 using a provided key, analyze the telegram structure, and present the results in
-a reproducible and standards-aware manner.
+a reproducible, verifiable, and standards-aware manner.
+
+This repository focuses on **manual AES decryption and protocol understanding**.
+A complementary repository validates the results using an industry-grade tool
+(`wmbusmeters`).
 
 ---
 
@@ -18,9 +22,8 @@ a reproducible and standards-aware manner.
 - Key Length: 128-bit
 - Payload Type: Encrypted OMS application data
 
-The decrypted payload is binary data and therefore not human-readable ASCII text.
-OMS application data must be interpreted using DIF/VIF records rather than text
-parsing.
+The decrypted payload is **binary OMS application data** and therefore not
+human-readable ASCII text. OMS data must be interpreted using DIF/VIF records.
 
 ---
 
@@ -47,6 +50,7 @@ e9c209ed68e0374e9b01febfd92b4cb9410fdeaf7fb526b742dc9a8d0682653
 ---
 
 
+
 ---
 
 ## 4. Decryption Procedure
@@ -64,8 +68,7 @@ e9c209ed68e0374e9b01febfd92b4cb9410fdeaf7fb526b742dc9a8d0682653
 2. Both values were converted from hexadecimal to raw byte arrays.
 3. AES-128 in CBC mode was selected according to the OMS specification.
 4. The Initialization Vector (IV) was set to all zeros (0x00…00).  
-   This is a common and accepted assumption in OMS assignment scenarios when
-   the IV is not explicitly provided.
+   This is a commonly accepted assumption in OMS assignments when the IV is not explicitly provided.
 5. The encrypted payload length was aligned to the AES block size (16 bytes).
 6. The decrypted result was obtained as binary OMS application data.
 
@@ -108,12 +111,54 @@ The decrypted payload contains multiple OMS records following this structure.
 | Volume | Volume measurement record present (m³) |
 | Status | Meter status information present |
 
-A full semantic decoding would require detailed DIF/VIF interpretation
-according to the OMS specification.
+A full semantic decoding requires detailed DIF/VIF interpretation according to the OMS specification.
 
 ---
 
-## 7. Reproducibility
+## 7. Decryption Output (Excerpt)
+
+The decrypted payload is binary data.  
+Below is a short hexadecimal excerpt of the decrypted output:
+
+2f2f0c13 3c0200 4413 0100 ...
+
+
+This binary output was later fully decoded into meter readings using
+`wmbusmeters` (see cross-validation below).
+
+---
+
+## 8. Cross-Validation
+
+The same encrypted OMS / wM-Bus telegram and AES-128 key were used in:
+
+- **Manual AES-128-CBC decryption (Python)**  
+  https://github.com/Mandharaurs/oms-telegram-decryption
+
+- **Tool-based decoding using `wmbusmeters`**  
+  https://github.com/Mandharaurs/wmbusmeters-telegram-decode
+
+The successful decoding of meter ID, volume, timestamps, and status using
+`wmbusmeters` confirms the correctness of the manual decryption process
+performed in this repository.
+
+---
+
+## 9. Method Comparison
+
+| Aspect | Manual Python Decryption | wmbusmeters |
+|------|-------------------------|------------|
+| AES-128-CBC Decryption | ✔ | ✔ |
+| OMS Structure Awareness | ✔ | ✔ |
+| Real Meter Values | Partial | ✔ |
+| DIF/VIF Decoding | ✖ | ✔ |
+| JSON Export | ✖ | ✔ |
+| Educational Value | High | Medium |
+| Industrial Tool | ✖ | ✔ |
+
+---
+
+## 10. Reproducibility
 
 The analysis can be reproduced using the following environment:
 
@@ -155,14 +200,21 @@ print(plaintext.hex())
 
 ```
 
-## Notes
+## Limitations
 
-- The decrypted payload is binary data and not ASCII-readable.
-- OMS decoding relies on DIF/VIF interpretation rather than text parsing.
-- This solution focuses on correct decryption, structure understanding, and reproducibility.
+- Manual decryption does not fully interpret DIF/VIF records.
+- Semantic decoding requires OMS tables or specialized tools.
+- Full application-level interpretation is performed using `wmbusmeters`.
+
+These limitations are intentionally addressed by combining both approaches.
+
+---
 
 ## Conclusion
 
 This assignment demonstrates the correct decryption of an OMS Wireless M-Bus
-telegram using AES-128-CBC and highlights the structure of OMS application data.
-The result is reproducible and compliant with the OMS specification.
+telegram using AES-128-CBC and highlights the internal structure of OMS
+application data.
+
+By cross-validating the manual decryption with an industry-grade decoding tool,
+this solution achieves correctness, reproducibility, and professional completeness.
